@@ -22,10 +22,8 @@ export default function LoginPage() {
   const handleLogin = () => {
     if (!name.trim()) return;
 
-    // Store user info in localStorage
     localStorage.setItem("user", JSON.stringify({ name, role }));
 
-    // Redirect based on role
     if (role === "admin") {
       router.push("/admin");
     } else {
@@ -39,11 +37,11 @@ export default function LoginPage() {
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <Image
-              src="/logo.svg"
+              src="/cyber.png"
               alt="Кибер Математик лого"
-              width={120}
-              height={120}
-              className="w-24 h-24"
+              width={1000}
+              height={1000}
+              className="w-64 h-24"
             />
           </div>
           <CardTitle className="text-3xl font-bold text-indigo-600">

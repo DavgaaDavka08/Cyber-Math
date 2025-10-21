@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "../components/auth-guard";
 import { Header } from "../components/header";
+import { CyberBg } from "../components/cyber-bg";
+import Image from "next/image";
 
 interface Problem {
   id: string;
@@ -108,7 +110,7 @@ export default function StudentPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header userName={user.name} role={user.role} onLogout={logout} />
-
+      <CyberBg />
       <main className="container mx-auto px-4 py-8 max-w-3xl">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Бодлого бод</h1>

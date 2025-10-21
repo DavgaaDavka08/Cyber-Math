@@ -1,18 +1,12 @@
 "use client";
 
-import type React from "react";
-
 import { useState, useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useAuth } from "../components/auth-guard";
+import { Card, CardContent } from "@/components/ui/card";
 import { Header } from "../components/header";
-import { CyberBg } from "../components/cyber-bg";
-import Image from "next/image";
+import { NumericKeypad } from "../components/numeric-keypad";
+import { useAuth } from "../components/auth-guard";
 
 interface Problem {
   id: string;
@@ -33,10 +27,13 @@ interface Submission {
 export default function StudentPage() {
   const { user, loading, logout } = useAuth("student");
   const [problems, setProblems] = useState<Problem[]>([]);
-  const [currentProblemIndex, setCurrentProblemIndex] = useState(0);
+  const [currentProblemIndex, setCurrentProblemIndex] = useState<number | null>(
+    null
+  );
   const [answer, setAnswer] = useState("");
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [showKeypad, setShowKeypad] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("mathProblems");
@@ -50,11 +47,10 @@ export default function StudentPage() {
     }
   }, []);
 
-  const currentProblem = problems[currentProblemIndex];
+  const currentProblem =
+    currentProblemIndex !== null ? problems[currentProblemIndex] : null;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleSubmit = () => {
     if (!currentProblem || !answer.trim()) return;
 
     const isCorrect =
@@ -73,220 +69,205 @@ export default function StudentPage() {
     localStorage.setItem("submissions", JSON.stringify(updatedSubmissions));
 
     setSubmission(newSubmission);
+    setShowKeypad(false);
   };
 
   const handleNext = () => {
     setAnswer("");
     setSubmission(null);
-    if (currentProblemIndex < problems.length - 1) {
-      setCurrentProblemIndex(currentProblemIndex + 1);
-    } else {
-      setCurrentProblemIndex(0);
-    }
+    setCurrentProblemIndex(null);
   };
 
-  const stats = {
-    total: submissions.length,
-    correct: submissions.filter((s) => s.isCorrect).length,
-    incorrect: submissions.filter((s) => !s.isCorrect).length,
+  const handleProblemSelect = (index: number) => {
+    setCurrentProblemIndex(index);
+    setAnswer("");
+    setSubmission(null);
+    setShowKeypad(false);
   };
 
-  const difficultyLabels = {
-    easy: "Хялбар",
-    medium: "Дунд",
-    hard: "Хүнд",
+  const handleKeypadInput = (value: string) => {
+    setAnswer((prev) => prev + value);
+  };
+
+  const handleKeypadDelete = () => {
+    setAnswer((prev) => prev.slice(0, -1));
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-100 to-pink-100">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-purple-600"></div>
       </div>
     );
   }
 
   if (!user) return null;
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <Header userName={user.name} role={user.role} onLogout={logout} />
-      <CyberBg />
-      <main className="container mx-auto px-4 py-8 max-w-3xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Бодлого бод</h1>
-          <p className="text-muted-foreground mt-1">
-            Математикийн чадвараа шалгаарай
-          </p>
-        </div>
+  if (currentProblemIndex === null) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-50 to-purple-50">
+        <Header userName={user.name} role={user.role} onLogout={logout} />
 
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-3xl font-bold text-indigo-600">
-                  {stats.total}
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Нийт оролдлого
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-3xl font-bold text-green-600">
-                  {stats.correct}
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">Зөв</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-3xl font-bold text-red-600">
-                  {stats.incorrect}
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">Буруу</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <main className="container mx-auto px-4 py-8 max-w-2xl">
+          <div className="mb-8">
+            <div className="playful-header mb-6">Сүүлчээр бодсон</div>
+          </div>
 
-        {problems.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">
-                Одоогоор бодлого байхгүй байна. Дараа дахин орж үзээрэй!
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant={
-                      currentProblem.difficulty === "easy"
-                        ? "secondary"
-                        : currentProblem.difficulty === "medium"
-                        ? "default"
-                        : "destructive"
-                    }
+          {problems.length === 0 ? (
+            <Card className="border-4 border-purple-200 shadow-lg">
+              <CardContent className="py-12 text-center">
+                <p className="text-purple-600 font-semibold text-lg">
+                  Одоогоор бодлого байхгүй байна. Дараа дахин орж үзээрэй!
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                {problems.slice(0, 9).map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleProblemSelect(index)}
+                    className="aspect-square rounded-3xl bg-white border-4 border-gray-900 hover:bg-purple-50 active:scale-95 transition-all flex items-center justify-center shadow-lg text-4xl font-black"
                   >
-                    {difficultyLabels[currentProblem.difficulty]}
-                  </Badge>
-                  <span className="text-sm text-muted-foreground">
-                    Бодлого {currentProblemIndex + 1} / {problems.length}
-                  </span>
-                </div>
+                    {index + 1}
+                  </button>
+                ))}
               </div>
-              <CardTitle className="text-2xl mt-4">
-                {currentProblem.question}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {!submission ? (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Input
-                      placeholder="Хариултаа оруулна уу..."
-                      value={answer}
-                      onChange={(e) => setAnswer(e.target.value)}
-                      className="text-lg"
-                      autoFocus
+
+              {problems.length > 9 && (
+                <button
+                  onClick={() => handleProblemSelect(9)}
+                  className="w-full aspect-[3/1] rounded-3xl bg-white border-4 border-gray-900 hover:bg-purple-50 active:scale-95 transition-all flex items-center justify-center shadow-lg text-4xl font-black"
+                >
+                  10
+                </button>
+              )}
+
+              <Button
+                onClick={() => handleProblemSelect(0)}
+                className="w-full mt-6 h-16 rounded-3xl bg-green-500 hover:bg-green-600 text-white text-xl font-bold border-4 border-green-700 shadow-lg"
+              >
+                Эхлэх
+              </Button>
+            </>
+          )}
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-50 to-purple-50">
+      <Header userName={user.name} role={user.role} onLogout={logout} />
+
+      <main className="container mx-auto px-4 py-8 max-w-2xl">
+        <div className="mb-6">
+          <div className="playful-header">Дасгал бодлого</div>
+        </div>
+
+        <Card className="border-4 border-purple-300 shadow-xl rounded-3xl overflow-hidden bg-white mb-6">
+          <CardContent className="p-8">
+            <div className="text-center mb-8">
+              <p className="text-2xl font-bold text-gray-900 leading-relaxed">
+                {currentProblem?.question}
+              </p>
+            </div>
+
+            {!submission ? (
+              <div className="space-y-6">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Бодлогын хариуг бичих..."
+                    value={answer}
+                    onChange={(e) => setAnswer(e.target.value)}
+                    onFocus={() => setShowKeypad(true)}
+                    className="w-full px-6 py-4 text-lg rounded-2xl border-2 border-gray-300 focus:border-purple-500 focus:outline-none focus:ring-4 focus:ring-purple-200"
+                  />
+                  {answer && (
+                    <button
+                      onClick={handleSubmit}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 w-12 h-12 rounded-xl bg-green-500 hover:bg-green-600 active:scale-95 transition-all flex items-center justify-center shadow-md"
+                    >
+                      <svg
+                        className="w-6 h-6 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={3}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+
+                {showKeypad && (
+                  <div className="pt-4">
+                    <NumericKeypad
+                      onInput={handleKeypadInput}
+                      onDelete={handleKeypadDelete}
                     />
                   </div>
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={!answer.trim()}
-                  >
-                    Хариулт илгээх
-                  </Button>
-                </form>
-              ) : (
-                <div className="space-y-4">
-                  {submission.isCorrect ? (
-                    <Alert className="border-green-200 bg-green-50">
-                      <div className="flex items-start gap-3">
-                        <svg
-                          className="w-5 h-5 text-green-600 mt-0.5"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-green-900">Зөв!</h4>
-                          <AlertDescription className="text-green-800 mt-1">
-                            Маш сайн! Таны хариулт зөв байна.
-                          </AlertDescription>
-                        </div>
-                      </div>
-                    </Alert>
-                  ) : (
-                    <Alert className="border-red-200 bg-red-50">
-                      <div className="flex items-start gap-3">
-                        <svg
-                          className="w-5 h-5 text-red-600 mt-0.5"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-red-900">Буруу</h4>
-                          <AlertDescription className="text-red-800 mt-1">
-                            Таны хариулт:{" "}
-                            <span className="font-semibold">
-                              {submission.answer}
-                            </span>
-                          </AlertDescription>
-                          <AlertDescription className="text-red-800 mt-1">
-                            Зөв хариулт:{" "}
-                            <span className="font-semibold">
-                              {currentProblem.correctAnswer}
-                            </span>
-                          </AlertDescription>
-                        </div>
-                      </div>
-                    </Alert>
-                  )}
+                )}
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {submission.isCorrect ? (
+                  <div className="bg-green-100 border-4 border-green-400 rounded-2xl p-6 text-center">
+                    <div className="text-6xl mb-3">✓</div>
+                    <h4 className="font-bold text-2xl text-green-900 mb-2">
+                      Зөв!
+                    </h4>
+                    <p className="text-green-800 text-lg">
+                      Маш сайн! Таны хариулт зөв байна.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="bg-red-100 border-4 border-red-400 rounded-2xl p-6 text-center">
+                      <div className="text-6xl mb-3">✗</div>
+                      <h4 className="font-bold text-2xl text-red-900 mb-2">
+                        Буруу
+                      </h4>
+                      <p className="text-red-800 text-lg mb-2">
+                        Таны хариулт:{" "}
+                        <span className="font-bold">{submission.answer}</span>
+                      </p>
+                      <p className="text-red-800 text-lg">
+                        Зөв хариулт:{" "}
+                        <span className="font-bold">
+                          {currentProblem?.correctAnswer}
+                        </span>
+                      </p>
+                    </div>
 
-                  {!submission.isCorrect && (
-                    <Card className="bg-blue-50 border-blue-200">
-                      <CardHeader>
-                        <CardTitle className="text-base text-blue-900">
-                          Тайлбар
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-blue-800">
-                          {currentProblem.explanation}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  )}
+                    <div className="bg-blue-100 border-4 border-blue-400 rounded-2xl p-6">
+                      <h4 className="font-bold text-xl text-blue-900 mb-3">
+                        Тайлбар
+                      </h4>
+                      <p className="text-blue-800 text-lg leading-relaxed">
+                        {currentProblem?.explanation}
+                      </p>
+                    </div>
+                  </>
+                )}
 
-                  <Button onClick={handleNext} className="w-full">
-                    Дараагийн бодлого
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+                <Button
+                  onClick={handleNext}
+                  className="w-full h-14 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xl font-bold shadow-lg"
+                >
+                  Буцах
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </main>
     </div>
   );

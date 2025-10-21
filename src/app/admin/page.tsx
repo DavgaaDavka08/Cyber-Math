@@ -18,7 +18,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "../components/auth-guard";
 import { Header } from "../components/header";
-import { CyberBg } from "../components/cyber-bg";
 
 interface Problem {
   id: string;
@@ -94,7 +93,7 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header userName={user.name} role={user.role} onLogout={logout} />
-      <CyberBg />
+
       <main className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
